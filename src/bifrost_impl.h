@@ -1,5 +1,7 @@
 #ifndef BIFROST_IMPL_H
 #define BIFROST_IMPL_H
+#include "gui/lvgl_app.h"
+
 #include <QObject>
 #include <memory>
 
@@ -24,8 +26,10 @@ private:
 
     DEFINE_HOOK(QObject*, create_ep_fb, )
 
-private:
+    void start_bifrost(QObject* epfb_inst);
+
     static std::weak_ptr<bifrost_impl> instance;
+    std::shared_ptr<lvgl_app> lvgl_app_inst;
 };
 
 #endif // BIFROST_IMPL_H
