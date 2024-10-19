@@ -34,14 +34,14 @@ void bifrost_impl::start_bifrost(QObject* epfb_inst)
     lvgl_app_inst = std::make_shared<lvgl_app>(display_config { fb, epfb_inst, screen_update_func });
     lvgl_app_inst->initialize();
 
-    int freq = 1000 / 85;
+    int freq = 1000000 / 85;
     long last_tick = 0;
     while (true) {
         lvgl_app_inst->tick();
         long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         long sleep_time = freq - (now - last_tick);
         if (sleep_time > 0) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
+            std::this_thread::sleep_for(std::chrono::microseconds(sleep_time));
         }
         last_tick = now;
     }

@@ -15,13 +15,13 @@ void lvgl_app::lv_display_flush(lv_display_t* disp, const lv_area_t* area, uint8
 {
     int fb_width = cfg.fb->width();
     int fb_height = cfg.fb->height();
-    int fb_depth = cfg.fb->depth();
+    int fb_depth = cfg.fb->depth() / 8;
 
     spdlog::debug("flushing area: {}x{}-{}x{}", area->x1, area->y1, area->x2, area->y2);
     // copy the area from the lvgl buffer to the QImage buffer
-    int lvgl_idx = 0;
     for (int y = area->y1; y <= area->y2; y++) {
         QRgb* line = reinterpret_cast<QRgb*>(cfg.fb->scanLine(y));
+        int lvgl_idx = (y * fb_width + area->x1) * fb_depth;
         for (int x = area->x1; x <= area->x2; x++) {
             if (fb_depth == 4) {
                 line[x] = qRgba(color_p[lvgl_idx + 1], color_p[lvgl_idx + 2], color_p[lvgl_idx + 3], 255);
@@ -32,8 +32,12 @@ void lvgl_app::lv_display_flush(lv_display_t* disp, const lv_area_t* area, uint8
         }
     }
 
-    lv_display_flush_ready(disp);
+    spdlog::debug("addr {} {}", (void*)compose_buffer, (void*) color_p);
+
+
     cfg.screen_update_func(cfg.epfb_inst, { area->x1, area->y1 }, { area->x2, area->y2 }, 1, 0, 0);
+    lv_display_flush_ready(disp);
+
 }
 
 void lvgl_app::lv_display_flush_cb(lv_display_t* disp, const lv_area_t* area, uint8_t* color_p)
@@ -68,9 +72,9 @@ void lvgl_app::initialize()
     lv_evdev_set_calibration(touch, 0, 0, 2160, 2880);
     lv_indev_set_display(touch, display);
 
-    auto buf_size = cfg.fb->width() * cfg.fb->height() * cfg.fb->depth();
+    auto buf_size = cfg.fb->width() * cfg.fb->height() * cfg.fb->depth() / 8;
     compose_buffer = new uint8_t[buf_size];
-    lv_display_set_buffers(display, compose_buffer, nullptr, buf_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
+    lv_display_set_buffers(display, compose_buffer, nullptr, buf_size, LV_DISPLAY_RENDER_MODE_DIRECT);
     lv_display_set_flush_cb(display, lv_display_flush_cb);
     spdlog::info("lvgl_app initialized");
 
