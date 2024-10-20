@@ -1,6 +1,8 @@
 # rmBifrost
 rmBifrost is a development framework that enables homebrew applications on the reMarkable Paper Pro (RMPP).
 
+This project is under active development, and we welcome contributions. Please feel free to open an issue if you'd like to implement any features.
+
 ## Building
 1. Set up the official RMPP toolchain and source the environment file
 2. `git clone --recursive https://github.com/shg8/rmBifrost`
