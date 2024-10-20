@@ -1,6 +1,6 @@
 #ifndef BIFROST_IMPL_H
 #define BIFROST_IMPL_H
-#include "gui/lvgl_app.h"
+#include "gui/lvgl_renderer.h"
 
 #include <QObject>
 #include <memory>
@@ -29,7 +29,7 @@ private:
     void start_bifrost(QObject* epfb_inst);
 
     static std::weak_ptr<bifrost_impl> instance;
-    std::shared_ptr<lvgl_app> lvgl_app_inst;
+    std::shared_ptr<lvgl_renderer> lvgl_renderer_inst;
 };
 
 #endif // BIFROST_IMPL_H

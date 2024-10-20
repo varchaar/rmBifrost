@@ -1,3 +1,3 @@
-target_include_directories(remarkable_bifrost PUBLIC BSWR)
-target_include_directories(remarkable_bifrost PUBLIC spdlog/include)
-target_include_directories(remarkable_bifrost PUBLIC lvgl)
+target_include_directories(rmBifrost PUBLIC BSWR)
+target_include_directories(rmBifrost PUBLIC spdlog/include)
+target_include_directories(rmBifrost PUBLIC lvgl)

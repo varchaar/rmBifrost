@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
-project(remarkable_bifrost)
+project(rmBifrost_project)
 set(CMAKE_CXX_STANDARD 17)
+
+include(cmake/CMakeRC.cmake)
 
 include_directories(include)
 
