@@ -10,7 +10,7 @@ rmBifrost is a development framework that enables homebrew applications on the r
 6. Load the library with xochitl `LD_PRELOAD=./libbifrost.so /usr/bin/xochitl --system`
 
 ## Disclaimer
-By viewing, downloading, or using any code and derived binaries of the repository, you agree to the following terms.
+By viewing, downloading, or using any code or derived binaries of this repository, you agree to the following terms.
 <details>
   <summary>Please ensure that you are familarized with <a href="https://support.remarkable.com/s/article/Limited-Warranty-Policy">reMarkable policies</a> before using this software in any capacity.</summary>
   
