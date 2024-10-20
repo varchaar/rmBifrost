@@ -46,7 +46,7 @@ void lvgl_renderer::lv_display_flush(lv_display_t* disp, const lv_area_t* area, 
                   area->x1, area->y1, area->x2, area->y2, p1.x, p1.y, p2.x, p2.y);
 
     if (pixel_changed) {
-        cfg.screen_update_func(cfg.epfb_inst, p1, p2, 0, 0, 0);
+        refresh(p1, p2, global_refresh_hint);
     } else {
         // auto current_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         // if (current_time - last_full_refresh_time < 250) {
@@ -96,9 +96,10 @@ void lvgl_renderer::initialize()
 
 void lvgl_renderer::start()
 {
+    spdlog::debug("lvgl renderer main loop.");
     int freq = 1000000 / 85;
     long last_tick = 0;
-    while (true) {
+    while (running) {
         tick();
         long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         long sleep_time = freq - (now - last_tick);
@@ -107,6 +108,40 @@ void lvgl_renderer::start()
         }
         last_tick = now;
     }
+}
+
+void lvgl_renderer::stop() {
+    running = false;
+}
+
+void lvgl_renderer::refresh(point p1, point p2, refresh_type type) {
+    switch (type) {
+        case MONOCHROME:
+            cfg.screen_update_func(cfg.epfb_inst, p1, p2, 0, 0, 0);
+            break;
+        case COLOR_FAST:
+            cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 0, 0);
+            break;
+        case COLOR_CONTENT:
+            cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 4, 0);
+            break;
+        case COLOR_1:
+            cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 1, 0);
+            break;
+        case COLOR_2:
+            cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 3, 0);
+            break;
+        case COLOR_3:
+            cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 5, 0);
+            break;
+        case FULL:
+            cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 4, 1);
+            break;
+    }
+}
+
+lvgl_renderer::~lvgl_renderer() {
+    // TODO: free resources
 }
 
 void lvgl_renderer::tick()

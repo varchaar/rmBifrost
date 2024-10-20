@@ -21,6 +21,9 @@ void bifrost_impl::initialize()
 
 QObject* bifrost_impl::create_ep_fb()
 {
+    if (hook_passthrough) {
+        return create_ep_fb_original();
+    }
     spdlog::debug("create_ep_fb hook called");
     auto epfb_inst = create_ep_fb_original();
     start_bifrost(epfb_inst);
@@ -41,10 +44,22 @@ void bifrost_impl::start_bifrost(QObject* epfb_inst)
     // call lvgl_renderer_inst->start() in a separate thread
     auto renderer_thread = std::thread([this] { lvgl_renderer_inst->start(); });
 
-    boot_screen boot_screen_inst {lvgl_renderer_inst};
-    auto boot_screen_thread = std::thread([&] { boot_screen_inst.start(); });
+    auto boot_screen_inst = std::make_shared<boot_screen>(lvgl_renderer_inst);
+    auto boot_screen_thread = std::thread([&] { boot_screen_inst->start(); });
 
     boot_screen_thread.join();
+
+    if (boot_screen_inst->state == RM_STOCK_OS) {
+        lvgl_renderer_inst->stop();
+        renderer_thread.join();
+
+        spdlog::debug("Relinquished control flow to the stock OS");
+        hook_passthrough = true;
+        return;
+    }
+
+    // TODO: homebrew apps
+
     renderer_thread.join();
 }
 

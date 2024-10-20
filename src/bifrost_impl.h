@@ -22,6 +22,7 @@ public:
     void initialize();
 
 private:
+    bool hook_passthrough = false;
     void initialize_hooks();
 
     DEFINE_HOOK(QObject*, create_ep_fb, )
