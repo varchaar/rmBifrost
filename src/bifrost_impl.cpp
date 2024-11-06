@@ -68,4 +68,5 @@ void bifrost_impl::initialize_hooks()
     BWSR_InlineHook(
         create_ep_fb_addr, reinterpret_cast<void*>(create_ep_fb_hook),
         reinterpret_cast<void**>(&create_ep_fb_original), nullptr, nullptr);
+    spdlog::info("Hooks initialized");
 }

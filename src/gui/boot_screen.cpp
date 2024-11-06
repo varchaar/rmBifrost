@@ -84,13 +84,9 @@ lv_obj_t *boot_screen::create_boot_option(const char *title) {
 }
 
 void boot_screen::setup_boot_selection() {
+#ifdef RM_VERSION_3_14_4_0
     auto remarkable = create_boot_option("reMarkable OS");
     lv_obj_align(remarkable, LV_ALIGN_BOTTOM_MID, 0, -425);
-
-    auto bifrost = create_boot_option("Bifrost");
-    lv_obj_align(bifrost, LV_ALIGN_BOTTOM_MID, 0, -200);
-
-    instance = shared_from_this();
 
     lv_obj_add_event_cb(remarkable, [](lv_event_t *event) {
         spdlog::debug("Launching reMarkable OS");
@@ -99,6 +95,12 @@ void boot_screen::setup_boot_selection() {
             instance->cv.notify_one();
         }
     }, LV_EVENT_CLICKED, nullptr);
+#endif
+
+    auto bifrost = create_boot_option("Bifrost");
+    lv_obj_align(bifrost, LV_ALIGN_BOTTOM_MID, 0, -200);
+
+    instance = shared_from_this();
 
     lv_obj_add_event_cb(bifrost, [](lv_event_t *event) {
         spdlog::debug("Launching Bifrost");

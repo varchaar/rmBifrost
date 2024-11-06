@@ -1,5 +1,5 @@
 # rmBifrost
-rmBifrost is a development framework that enables homebrew applications on the reMarkable Paper Pro (RMPP). Supports 3.14.4.0.
+rmBifrost is a development framework that enables homebrew applications on the reMarkable Paper Pro (RMPP). Supports 3.15.4.2, 3.14.4.0.
 
 This project is under active development, and we welcome contributions. Please feel free to open an issue if you'd like to implement any features.
 
