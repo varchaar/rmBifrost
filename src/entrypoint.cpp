@@ -4,7 +4,7 @@
 
 #include "constants.h"
 #include "hook_typedefs.h"
-#include <bifrost/bifrost.h>
+#include "bifrost.h"
 #include <iostream>
 #include <spdlog/spdlog.h>
 

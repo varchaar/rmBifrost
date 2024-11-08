@@ -4,6 +4,7 @@
 #include <spdlog/spdlog.h>
 
 #include "../constants.h"
+#include "../resources.h"
 #include <src/core/lv_obj_pos.h>
 #include <src/display/lv_display.h>
 #include <src/misc/lv_anim.h>

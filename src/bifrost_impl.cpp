@@ -44,21 +44,22 @@ void bifrost_impl::start_bifrost(QObject* epfb_inst)
     // call lvgl_renderer_inst->start() in a separate thread
     auto renderer_thread = std::thread([this] { lvgl_renderer_inst->start(); });
 
-    auto boot_screen_inst = std::make_shared<boot_screen>(lvgl_renderer_inst);
-    auto boot_screen_thread = std::thread([&] { boot_screen_inst->start(); });
+    // auto boot_screen_inst = std::make_shared<boot_screen>(lvgl_renderer_inst);
+    // auto boot_screen_thread = std::thread([&] { boot_screen_inst->start(); });
 
-    boot_screen_thread.join();
+    // boot_screen_thread.join();
 
-    if (boot_screen_inst->state == RM_STOCK_OS) {
-        lvgl_renderer_inst->stop();
-        renderer_thread.join();
+    // if (boot_screen_inst->state == RM_STOCK_OS) {
+    //     lvgl_renderer_inst->stop();
+    //     renderer_thread.join();
 
-        spdlog::debug("Relinquished control flow to the stock OS");
-        hook_passthrough = true;
-        return;
-    }
+    //     spdlog::debug("Relinquished control flow to the stock OS");
+    //     hook_passthrough = true;
+    //     return;
+    // }
 
-    // TODO: homebrew apps
+    compositor_inst = std::make_shared<compositor>(lvgl_renderer_inst);
+    compositor_inst->start();
 
     renderer_thread.join();
 }

@@ -1,7 +1,5 @@
 #include "lvgl_renderer.h"
 
-#include "../constants.h"
-
 #include <spdlog/spdlog.h>
 
 std::weak_ptr<lvgl_renderer> lvgl_renderer::instance;

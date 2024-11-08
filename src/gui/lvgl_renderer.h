@@ -2,6 +2,7 @@
 #ifndef LVGL_APP_H
 #define LVGL_APP_H
 
+#include "../constants.h"
 #include "../hook_typedefs.h"
 #include "lv_conf.h"
 
@@ -14,17 +15,6 @@ struct display_config {
     QImage* fb;
     QObject* epfb_inst;
     ScreenUpdateFunc screen_update_func;
-};
-
-enum refresh_type {
-    MONOCHROME,
-    MONOCHROME_PENCIL,
-    COLOR_FAST,
-    COLOR_1,
-    COLOR_2,
-    COLOR_3,
-    COLOR_CONTENT,
-    FULL
 };
 
 class lvgl_renderer : public std::enable_shared_from_this<lvgl_renderer> {

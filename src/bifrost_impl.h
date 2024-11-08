@@ -1,9 +1,11 @@
 #ifndef BIFROST_IMPL_H
 #define BIFROST_IMPL_H
+#include "compositor/compositor.h"
 #include "gui/lvgl_renderer.h"
 
 #include <QObject>
 #include <memory>
+#include <thread>
 
 #define DEFINE_HOOK(return_type, function_name, ...)                   \
     return_type (*function_name##_original)(__VA_ARGS__) = nullptr;    \
@@ -31,6 +33,7 @@ private:
 
     static std::weak_ptr<bifrost_impl> instance;
     std::shared_ptr<lvgl_renderer> lvgl_renderer_inst;
+    std::shared_ptr<compositor> compositor_inst;
 };
 
 #endif // BIFROST_IMPL_H
