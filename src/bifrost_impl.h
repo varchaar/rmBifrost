@@ -32,7 +32,6 @@ private:
     void start_bifrost(QObject* epfb_inst);
 
     static std::weak_ptr<bifrost_impl> instance;
-    std::shared_ptr<lvgl_renderer> lvgl_renderer_inst;
     std::shared_ptr<compositor> compositor_inst;
 };
 

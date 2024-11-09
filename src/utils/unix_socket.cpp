@@ -10,13 +10,13 @@ unix_socket::unix_socket(const std::string& path, bool server)
         throw std::runtime_error("Failed to create socket");
     }
 
-    struct sockaddr_un addr;
+    sockaddr_un addr{};
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path, path.c_str(), sizeof(addr.sun_path) - 1);
 
     if (server) {
         unlink(path.c_str());
-        if (bind(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) == -1) {
+        if (bind(fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == -1) {
             close(fd);
             throw std::runtime_error("Failed to bind socket");
         }
@@ -26,7 +26,7 @@ unix_socket::unix_socket(const std::string& path, bool server)
             throw std::runtime_error("Failed to listen on socket");
         }
     } else {
-        if (connect(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) == -1) {
+        if (connect(fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == -1) {
             close(fd);
             throw std::runtime_error("Failed to connect to server");
         }

@@ -7,8 +7,8 @@
 #include <cereal/types/polymorphic.hpp>
 #include <cstdint>
 
-struct release_frame : packet {
-    uint8_t framebuffer_id;
+struct release_frame_packet : packet {
+    uint32_t framebuffer_id;
 
     template <class Archive>
     void serialize(Archive& archive)
@@ -21,8 +21,8 @@ struct release_frame : packet {
 
 #include <cereal/archives/binary.hpp>
 
-CEREAL_REGISTER_TYPE(release_frame);
+CEREAL_REGISTER_TYPE(release_frame_packet);
 
-CEREAL_REGISTER_POLYMORPHIC_RELATION(packet, release_frame);
+CEREAL_REGISTER_POLYMORPHIC_RELATION(packet, release_frame_packet);
 
 #endif // RELEASE_FRAME_H

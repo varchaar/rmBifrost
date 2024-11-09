@@ -14,11 +14,11 @@ private:
 
 public:
     shm_channel(const std::string& identifier, int size, bool read_only);
+    void *data = nullptr;
 
 private:
     bool read_only;
     int fd;
-    void *data = nullptr;
 };
 
 #endif // SHM_CHANNEL_H

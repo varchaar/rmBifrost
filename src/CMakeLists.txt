@@ -32,8 +32,8 @@ add_library(rmBifrost_compositor SHARED entrypoint.cpp
         compositor/packets/packet.h
         compositor/packets/begin_session_request.h
         compositor/packets/begin_session_response.h
-        compositor/packets/submit_frame.h
-        compositor/packets/release_frame.h
+        compositor/packets/submit_frame_packet.h
+        compositor/packets/release_frame_packet.h
         resources.h
 )
 

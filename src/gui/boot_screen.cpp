@@ -12,7 +12,7 @@
 
 void boot_screen::start() {
     spdlog::debug("Presenting launch options");
-    lvgl_renderer_inst->set_global_refresh_hint(COLOR_FAST);
+    lvgl_renderer_inst->set_global_refresh_hint(COLOR_ANIMATION);
     setup_animation();
 
     std::this_thread::sleep_for(std::chrono::milliseconds(4000));
@@ -24,8 +24,6 @@ void boot_screen::start() {
     std::unique_lock<std::mutex> lk(cv_m);
     cv.wait(lk, [this] { return state != IN_FLIGHT; });
     lk.unlock();
-
-    lvgl_renderer_inst->refresh({ 0, 0 }, { SCREEN_WIDTH, SCREEN_HEIGHT }, FULL);
 }
 
 boot_screen::~boot_screen() {

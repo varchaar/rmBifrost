@@ -3,11 +3,7 @@
 
 #include <QtCore/QObject>
 
-
-struct point {
-    int x;
-    int y;
-};
+#include "utils/data_structs.h"
 
 typedef void (*ScreenUpdateFunc)(QObject*, point start, point end, int, int, int);
 

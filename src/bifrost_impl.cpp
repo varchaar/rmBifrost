@@ -38,30 +38,11 @@ void bifrost_impl::start_bifrost(QObject* epfb_inst)
 
     auto screen_update_func = reinterpret_cast<ScreenUpdateFunc>(screen_update_func_addr);
 
-    lvgl_renderer_inst = std::make_shared<lvgl_renderer>(display_config { fb, epfb_inst, screen_update_func });
-    lvgl_renderer_inst->initialize();
-
-    // call lvgl_renderer_inst->start() in a separate thread
-    auto renderer_thread = std::thread([this] { lvgl_renderer_inst->start(); });
-
-    // auto boot_screen_inst = std::make_shared<boot_screen>(lvgl_renderer_inst);
-    // auto boot_screen_thread = std::thread([&] { boot_screen_inst->start(); });
-
-    // boot_screen_thread.join();
-
-    // if (boot_screen_inst->state == RM_STOCK_OS) {
-    //     lvgl_renderer_inst->stop();
-    //     renderer_thread.join();
-
-    //     spdlog::debug("Relinquished control flow to the stock OS");
-    //     hook_passthrough = true;
-    //     return;
-    // }
-
-    compositor_inst = std::make_shared<compositor>(lvgl_renderer_inst);
+    compositor_inst = std::make_shared<compositor>(compositor::display_config{fb, epfb_inst, screen_update_func});
     compositor_inst->start();
 
-    renderer_thread.join();
+    hook_passthrough = true;
+    return;
 }
 
 void bifrost_impl::initialize_hooks()
