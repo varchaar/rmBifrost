@@ -32,7 +32,7 @@ QObject* bifrost_impl::create_ep_fb()
 
 void bifrost_impl::start_bifrost(QObject* epfb_inst)
 {
-    QImage* fb = *reinterpret_cast<QImage**>(reinterpret_cast<void*>(epfb_inst) + 0xc0);
+    QImage* fb = *reinterpret_cast<QImage**>(reinterpret_cast<uintptr_t>(epfb_inst) + 0xc0);
     spdlog::debug("fb: {}x{}x{}", fb->width(), fb->height(), fb->depth());
     spdlog::debug("fb format: {}", QMetaEnum::fromType<QImage::Format>().valueToKey(fb->format()));
 

@@ -24,3 +24,7 @@ include_directories(${cereal_SOURCE_DIR}/include)
 add_subdirectory(src)
 add_subdirectory(external)
 add_subdirectory(examples)
+
+add_custom_target(rmBifrost ALL
+    DEPENDS rmBifrost_client rmBifrost_compositor
+)

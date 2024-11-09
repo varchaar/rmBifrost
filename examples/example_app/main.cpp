@@ -10,9 +10,8 @@ int main()
     bifrost_client client("example_app", "Example App", false, 1);
     client.start();
 
-    auto [image_index, image] = client.acquire_swapchain_image();
-
-    std::cout << "Acquired image: " << image << std::endl;
+    auto [image_index, image_ptr] = client.acquire_swapchain_image();
+    auto image = reinterpret_cast<Rgb*>(image_ptr);
 
     auto extent = client.get_swapchain_extent();
     std::cout << "Swapchain extent: " << extent.first << "x" << extent.second << std::endl;
