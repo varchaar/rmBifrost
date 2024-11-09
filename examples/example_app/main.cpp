@@ -10,7 +10,7 @@ int main()
     bifrost_client client("example_app", "Example App", false, 1);
     client.start();
 
-    Rgb *image = reinterpret_cast<Rgb *>(client.acquire_swapchain_image());
+    auto [image_index, image] = client.acquire_swapchain_image();
 
     std::cout << "Acquired image: " << image << std::endl;
 
@@ -30,7 +30,7 @@ int main()
     }
 
     std::cout << "Submitting frame" << std::endl;
-    client.submit_frame(0, 0, 0, 100, 100, COLOR_FAST);
+    client.submit_frame(image_index, 0, 0, 100, 100, COLOR_FAST);
     std::cout << "Submitted frame" << std::endl;
     return 0;
 }

@@ -116,14 +116,14 @@ extent bifrost_client_impl::get_swapchain_extent() const
     return swapchain_extent;
 }
 
-void* bifrost_client_impl::acquire_swapchain_image()
+std::pair<uint32_t, void *> bifrost_client_impl::acquire_swapchain_image()
 {
     // block until an image is available
     std::unique_lock<std::mutex> lock(swapchain_image_available_mutex);
     swapchain_image_available_cv.wait(lock, [this] { return !swapchain_image_available.empty(); });
     uint32_t image_index = swapchain_image_available.front();
     swapchain_image_available.pop();
-    return channel->data + swapchain_image_offsets[image_index];
+    return { image_index, channel->data + swapchain_image_offsets[image_index] };
 }
 
 void bifrost_client_impl::submit_frame(uint32_t framebuffer_id, rect dirty_region, refresh_type refresh_type)

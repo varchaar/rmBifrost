@@ -17,7 +17,7 @@ void bifrost_client::stop()
     impl->stop();
 }
 
-void *bifrost_client::acquire_swapchain_image()
+std::pair<uint32_t, void *> bifrost_client::acquire_swapchain_image()
 {
     return impl->acquire_swapchain_image();
 }

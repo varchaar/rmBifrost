@@ -21,7 +21,7 @@ public:
     void start();
     void stop();
     extent get_swapchain_extent() const;
-    void *acquire_swapchain_image();
+    std::pair<uint32_t, void *> acquire_swapchain_image();
     void submit_frame(uint32_t framebuffer_id, rect dirty_region, refresh_type refresh_type);
     ~bifrost_client_impl();
 private:
