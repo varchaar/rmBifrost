@@ -24,8 +24,6 @@
 
 #if EBGARAMOND_48
 
-#include <stdint.h>
-
 /*-----------------
  *    BITMAPS
  *----------------*/
