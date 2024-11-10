@@ -26,5 +26,5 @@ add_subdirectory(external)
 add_subdirectory(examples)
 
 add_custom_target(rmBifrost ALL
-    DEPENDS rmBifrost_client rmBifrost_compositor
+    DEPENDS rmBifrost_client rmBifrost_compositor examples
 )

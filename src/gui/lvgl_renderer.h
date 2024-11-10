@@ -18,8 +18,10 @@ public:
     {
     }
     void initialize();
+    void request_full_refresh();
     void set_global_refresh_hint(refresh_type hint) { global_refresh_hint = hint; }
     void tick();
+    void enable_transparent_bg();
     ~lvgl_renderer();
 private:
     static std::weak_ptr<lvgl_renderer> instance;
@@ -29,6 +31,7 @@ private:
     lv_display_t* display;
     uint8_t* compose_buffer;
     long last_full_refresh_time = 0;
+    bool full_refresh_requested = false;
 
     refresh_type global_refresh_hint = MONOCHROME;
 

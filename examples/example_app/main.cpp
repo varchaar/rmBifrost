@@ -22,14 +22,16 @@ int main()
         }
     }
 
-    for (int y = 0; y < 100; y++) {
-        for (int x = 0; x < 100; x++) {
-            image[y * extent.first + x] = Rgba(255, 255, 0, 255);
+    for (int i = 0; i < 10; i++) {
+        for (int y = i * 100; y < (i + 1) * 100; y++) {
+            for (int x = 0; x < 100; x++) {
+                image[y * extent.first + x] = Rgba(255, i % 3 == 0 ? 0 : 255, i % 3 == 1 ? 0 : 255, 255);
+            }
         }
     }
 
     std::cout << "Submitting frame" << std::endl;
-    client.submit_frame(image_index, 0, 0, 100, 100, COLOR_FAST);
+    client.submit_frame(image_index, 0, 0, 100, 1000, COLOR_FAST);
     std::cout << "Submitted frame" << std::endl;
     return 0;
 }

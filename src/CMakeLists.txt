@@ -11,6 +11,7 @@ add_compile_definitions(LV_LVGL_H_INCLUDE_SIMPLE)
 add_library(rmBifrost_compositor SHARED entrypoint.cpp
         # fonts
         resources/fonts/ebgaramond_48.c
+        resources/fonts/ionicons.c
 
         bifrost.cpp
         bifrost_impl.cpp
@@ -35,6 +36,8 @@ add_library(rmBifrost_compositor SHARED entrypoint.cpp
         compositor/packets/submit_frame_packet.h
         compositor/packets/release_frame_packet.h
         resources.h
+        gui/system_ui.cpp
+        gui/system_ui.h
 )
 
 add_library(rmBifrost::compositor ALIAS rmBifrost_compositor)

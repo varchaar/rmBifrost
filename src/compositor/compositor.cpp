@@ -12,6 +12,7 @@ compositor::compositor(display_config cfg)
           fb_mutex,
           std::bind(&compositor::request_refresh, this, std::placeholders::_1, std::placeholders::_2)))
 {
+    cfg.fb->fill(QColor(255, 255, 255));
     renderer->initialize();
 }
 
@@ -52,10 +53,13 @@ void compositor::start()
         return;
     }
 
+    spdlog::debug("User selected Bifrost; starting system UI");
+
     boot_screen_inst.reset();
 
-    refresh({0, 0}, {SCREEN_WIDTH, SCREEN_HEIGHT}, FULL);
-
+    system_ui_inst = std::make_shared<system_ui>(renderer);
+    system_ui_inst->initialize();
+    system_ui_inst->set_content({system_ui::content_type::BIFROST, "Bifrost"});
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     listener_thread = std::thread(&compositor::listener, this);
@@ -130,7 +134,7 @@ void compositor::listener()
         auto connection = socket->accept_connection();
         spdlog::debug("Accepted connection");
         auto client = std::make_shared<compositor_client>(std::move(connection), compositor_client::compositor_client_config {
-                                                                                     .title_bar_height = 0,
+                                                                                     .title_bar_height = 100,
                                                                                  });
         clients.push_back(client);
         client->start();

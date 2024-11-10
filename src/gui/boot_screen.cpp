@@ -9,13 +9,14 @@
 #include <src/display/lv_display.h>
 #include <src/misc/lv_anim.h>
 #include <src/widgets/lottie/lv_lottie.h>
+#include <src/misc/lv_anim.h>
 
 void boot_screen::start() {
     spdlog::debug("Presenting launch options");
     lvgl_renderer_inst->set_global_refresh_hint(COLOR_ANIMATION);
-    setup_animation();
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(4000));
+    // setup_animation();
+    // std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
     lvgl_renderer_inst->set_global_refresh_hint(MONOCHROME);
     setup_boot_selection();
@@ -24,18 +25,25 @@ void boot_screen::start() {
     std::unique_lock<std::mutex> lk(cv_m);
     cv.wait(lk, [this] { return state != IN_FLIGHT; });
     lk.unlock();
+
+    spdlog::debug("User selected an option; exiting boot screen");
 }
 
 boot_screen::~boot_screen() {
-    for (auto obj: deletion_queue) {
-        lv_obj_delete(obj);
+    std::lock_guard<std::mutex> lock(g_lvgl_mutex);
+    while (!deletion_queue.empty()) {
+        lv_obj_delete(deletion_queue.top());
+        deletion_queue.pop();
     }
+    spdlog::debug("Boot screen deleted");
 }
 
 void boot_screen::setup_animation() {
+    std::lock_guard<std::mutex> lock(g_lvgl_mutex);
+
     welcome_json = get_resource_file("animations/hello.json");
 
-    auto lottie_obj = lv_lottie_create(lv_screen_active());
+    lottie_obj = lv_lottie_create(lv_screen_active());
     lv_lottie_set_src_data(lottie_obj, welcome_json.data(), welcome_json.size());
     lv_anim_set_repeat_count(lv_lottie_get_anim(lottie_obj), 1);
 
@@ -46,7 +54,7 @@ void boot_screen::setup_animation() {
 
     lv_obj_align(lottie_obj, LV_ALIGN_CENTER, 0, 0);
 
-    deletion_queue.push_back(lottie_obj);
+    deletion_queue.push(lottie_obj);
 }
 
 lv_obj_t *boot_screen::create_boot_option(const char *title) {
@@ -75,20 +83,22 @@ lv_obj_t *boot_screen::create_boot_option(const char *title) {
     lv_obj_set_size(subtitle_label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
 
     // Add the box to the deletion queue
-    deletion_queue.push_back(title_label);
-    deletion_queue.push_back(subtitle_label);
-    deletion_queue.push_back(btn);
-
+    deletion_queue.push(btn);
+    deletion_queue.push(title_label);
+    deletion_queue.push(subtitle_label);
     return btn;
 }
 
 void boot_screen::setup_boot_selection() {
+    std::lock_guard<std::mutex> lock(g_lvgl_mutex);
+
     auto remarkable = create_boot_option("reMarkable OS");
     lv_obj_align(remarkable, LV_ALIGN_BOTTOM_MID, 0, -425);
 
     lv_obj_add_event_cb(remarkable, [](lv_event_t *event) {
         spdlog::debug("Launching reMarkable OS");
         if (auto instance = boot_screen::instance.lock()) {
+            std::lock_guard<std::mutex> lk(instance->cv_m);
             instance->state = RM_STOCK_OS;
             instance->cv.notify_one();
         }
@@ -102,6 +112,7 @@ void boot_screen::setup_boot_selection() {
     lv_obj_add_event_cb(bifrost, [](lv_event_t *event) {
         spdlog::debug("Launching Bifrost");
         if (auto instance = boot_screen::instance.lock()) {
+            std::lock_guard<std::mutex> lk(instance->cv_m);
             instance->state = BIFROST;
             instance->cv.notify_one();
         }

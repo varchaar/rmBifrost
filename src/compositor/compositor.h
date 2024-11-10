@@ -5,7 +5,7 @@
 #include "../utils/shm_channel.h"
 #include "../utils/unix_socket.h"
 #include "compositor_client.h"
-
+#include "../gui/system_ui.h"
 #include <memory>
 #include <thread>
 
@@ -27,13 +27,13 @@ private:
 
     display_config cfg;
     std::shared_ptr<lvgl_renderer> renderer;
+    std::shared_ptr<system_ui> system_ui_inst;
     std::unique_ptr<unix_socket> socket;
     std::thread listener_thread;
     std::thread render_thread;
     std::mutex fb_mutex;
 
     std::vector<std::shared_ptr<compositor_client>> clients;
-
     std::vector<std::pair<rect, refresh_type>> pending_refresh_requests;
 
     void listener();
