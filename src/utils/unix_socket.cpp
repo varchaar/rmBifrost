@@ -60,8 +60,13 @@ void unix_socket::connection::read(char* buf, const size_t size) const
             if (errno == EAGAIN) {
                 continue;
             }
+
             spdlog::error("Failed to read from socket: {}", strerror(errno));
             throw std::runtime_error("Failed to read from socket");
+        }
+        if (read_bytes == 0) {
+            spdlog::debug("Client disconnected (EOF)");
+            throw std::runtime_error("Connection closed by peer");
         }
         total_read += read_bytes;
     }
@@ -87,9 +92,8 @@ void unix_socket::connection::write(const char* data, size_t size)
     }
 }
 
-void unix_socket::connection::close()
-{
-    ::close(fd);
+void unix_socket::connection::close() {
+    ::shutdown(fd, SHUT_RDWR);
 }
 
 std::shared_ptr<unix_socket::connection> unix_socket::get_connection() const

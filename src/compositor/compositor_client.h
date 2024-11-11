@@ -13,11 +13,15 @@
 #include <mutex>
 #include <queue>
 #include <optional>
+#include <src/misc/lv_types.h>
 
 class compositor_client {
 public:
     struct compositor_client_config {
-        uint32_t title_bar_height;
+        uint32_t id;
+        uint32_t navbar_height;
+        extent swapchain_extent;
+        point pos;
     };
 
     enum class client_state {
@@ -27,28 +31,33 @@ public:
     };
 
     explicit compositor_client(std::unique_ptr<unix_socket::connection> conn, compositor_client_config cfg);
+
+
     void start();
     void stop();
     std::optional<std::tuple<uint32_t, submit_frame_packet, rect, uint64_t>> get_swapchain_image();
     void release_swapchain_image(uint32_t frame_id);
+    std::optional<std::pair<rect, refresh_type>> blit_to_canvas();
 
-    std::string application_name;
-    std::string window_title;
-    bool prefer_full_screen;
+    std::string application_name = "Untitled";
+    std::string window_title = "Untitled";
+    bool prefer_full_screen = false;
     client_state state = client_state::CONNECTED;
+    uint8_t *lvgl_canvas_buffer;
 private:
     void handle_packet(const std::shared_ptr<packet>& packet);
     void send_packet(const std::shared_ptr<packet>& resp);
     std::vector<uint64_t> create_swapchain_images();
+    void create_lvgl_canvas();
 
     compositor_client_config cfg;
     std::thread client_thread;
     std::unique_ptr<unix_socket::connection> conn;
     std::atomic<bool> running;
 
-    uint32_t swapchain_image_count;
-    extent swapchain_extent;
-    rect composite_region;
+    uint32_t swapchain_image_count = 1;
+    extent swapchain_extent = {SCREEN_WIDTH, SCREEN_HEIGHT};
+    rect composite_region = {{0, 0}, {SCREEN_WIDTH, SCREEN_HEIGHT}};
 
     std::string session_name;
     size_t aligned_image_size;
@@ -58,6 +67,8 @@ private:
     std::queue<uint32_t> submitted_frame_ids;
 
     std::mutex packet_write_mutex;
+
+    lv_obj_t* lvgl_canvas = nullptr;
 };
 
 #endif // COMPOSITOR_CLIENT_H

@@ -21,8 +21,8 @@ public:
 
     void start();
     void stop();
-    void request_refresh(rect update_region, refresh_type type);
 private:
+    static uint32_t next_client_id;
     std::atomic<bool> running = false;
 
     display_config cfg;
@@ -31,14 +31,23 @@ private:
     std::unique_ptr<unix_socket> socket;
     std::thread listener_thread;
     std::thread render_thread;
-    std::mutex fb_mutex;
 
+    std::mutex client_mutex;
     std::vector<std::shared_ptr<compositor_client>> clients;
+    std::shared_ptr<compositor_client> active_client;
+
     std::vector<std::pair<rect, refresh_type>> pending_refresh_requests;
 
+    int fps = 0;
+    std::chrono::time_point<std::chrono::system_clock> last_fps_update;
+
+    std::vector<uint8_t *> canvas_buf_deletion_queue;
+
     void listener();
-    void refresh(point p1, point p2, refresh_type type);
+    void refresh(point p1, point p2, refresh_type type) const;
     void render_clients();
+    void set_active_client(const std::shared_ptr<compositor_client> &client);
+    void request_refresh(rect update_region, refresh_type type);
 };
 
 

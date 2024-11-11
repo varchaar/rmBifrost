@@ -4,20 +4,20 @@
 #include "../gui/boot_screen.h"
 
 #include <utility>
+
 compositor::compositor(display_config cfg)
     : cfg(cfg)
-    , socket(std::make_unique<unix_socket>("/run/bifrost_comp_ctl.sock", true))
-    , renderer(std::make_shared<lvgl_renderer>(
+      , socket(std::make_unique<unix_socket>("/run/bifrost_comp_ctl.sock", true))
+      , renderer(std::make_shared<lvgl_renderer>(
           cfg.fb,
-          fb_mutex,
-          std::bind(&compositor::request_refresh, this, std::placeholders::_1, std::placeholders::_2)))
-{
+          [this](auto &&PH1, auto &&PH2) {
+              request_refresh(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2));
+          })) {
     cfg.fb->fill(QColor(255, 255, 255));
     renderer->initialize();
 }
 
-void compositor::start()
-{
+void compositor::start() {
     spdlog::info("Starting bifrost compositor");
     running = true;
 
@@ -27,16 +27,32 @@ void compositor::start()
         while (running) {
             render_clients();
             renderer->tick();
-            for (const auto& [req_region, req_type] : pending_refresh_requests) {
+
+            for (auto &buffer: canvas_buf_deletion_queue) {
+                delete[] buffer;
+            }
+            canvas_buf_deletion_queue.clear();
+
+            for (const auto &[req_region, req_type]: pending_refresh_requests) {
                 refresh(req_region.p1, req_region.p2, req_type);
             }
             pending_refresh_requests.clear();
-            long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            long now = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
             long sleep_time = freq - (now - last_tick);
             if (sleep_time > 0) {
                 std::this_thread::sleep_for(std::chrono::microseconds(sleep_time));
             }
             last_tick = now;
+
+            if (std::chrono::duration_cast<std::chrono::seconds>(
+                std::chrono::system_clock::now() - last_fps_update).count() >= 1) {
+                spdlog::info("FPS: {}", fps);
+                fps = 0;
+                last_fps_update = std::chrono::system_clock::now();
+            } else {
+                fps++;
+            }
         }
     });
 
@@ -66,104 +82,112 @@ void compositor::start()
     render_thread.join();
 }
 
-void compositor::request_refresh(rect update_region, refresh_type type)
-{
+void compositor::request_refresh(rect update_region, refresh_type type) {
     if (pending_refresh_requests.empty()) {
-        pending_refresh_requests.push_back({ update_region, type });
+        pending_refresh_requests.emplace_back(update_region, type);
     } else {
-        for (auto& [req_region, req_type] : pending_refresh_requests) {
+        for (auto &[req_region, req_type]: pending_refresh_requests) {
             if (req_region.intersects(update_region)) {
                 req_region = req_region.union_(update_region);
                 req_type = std::max(req_type, type);
                 return;
             }
         }
-        pending_refresh_requests.push_back({ update_region, type });
+        pending_refresh_requests.emplace_back(update_region, type);
     }
 }
 
-void compositor::render_clients()
-{
+void compositor::render_clients() {
+    std::lock_guard lock(client_mutex);
+
+    if (system_ui_inst && system_ui_inst->requested_application_exit()) {
+        active_client->stop();
+        set_active_client(nullptr);
+    }
+
     // Remove disconnected clients
-    clients.erase(std::remove_if(clients.begin(), clients.end(), [](const auto& client) {
+    clients.erase(std::remove_if(clients.begin(), clients.end(), [this](const auto &client) {
         if (client->state == compositor_client::client_state::DISCONNECTED) {
             spdlog::info("Client {} has disconnected", client->application_name);
+            canvas_buf_deletion_queue.push_back(client->lvgl_canvas_buffer);
             return true;
         }
         return false;
     }), clients.end());
 
-    for (const auto& client : clients) {
-        auto swapchain_image = client->get_swapchain_image();
-        if (!swapchain_image) {
+    for (const auto &client: clients) {
+        auto refresh_area = client->blit_to_canvas();
+        if (!refresh_area) {
             return;
         }
-        auto [frame_id, submit_frame, composite_region, image_data] = *swapchain_image;
-
-        void* image_base_ptr = reinterpret_cast<void*>(image_data);
-        rect src_update_region = submit_frame.dirty_rect;
-        rect dst_update_region = { composite_region.p1 + src_update_region.p1, composite_region.p1 + src_update_region.p2 };
-        spdlog::debug("Rendering client {} with src_update_region [{},{},{},{}] and dst_update_region [{},{},{},{}]", client->application_name, src_update_region.p1.x, src_update_region.p1.y, src_update_region.p2.x, src_update_region.p2.y, dst_update_region.p1.x, dst_update_region.p1.y, dst_update_region.p2.x, dst_update_region.p2.y);
-        for (uint32_t y = dst_update_region.p1.y; y <= dst_update_region.p2.y; y++) {
-            QRgb* line = reinterpret_cast<QRgb*>(cfg.fb->scanLine(y));
-            uint8_t* dst_line_ptr = reinterpret_cast<uint8_t*>(line);
-            uint8_t* src_line_ptr = reinterpret_cast<uint8_t*>(image_base_ptr) + (y - composite_region.p1.y) * composite_region.width() * 4;
-            spdlog::debug("Copying line {}; first pixel is {}", y, *reinterpret_cast<uint32_t*>(src_line_ptr));
-            std::memcpy(dst_line_ptr + dst_update_region.p1.x * 4, src_line_ptr + src_update_region.p1.x * 4, (dst_update_region.p2.x - dst_update_region.p1.x + 1) * 4);
-        }
-
-        request_refresh(dst_update_region, submit_frame.preferred_refresh_type);
-
-        client->release_swapchain_image(frame_id);
+        request_refresh(refresh_area->first, refresh_area->second);
     }
 }
 
-void compositor::stop()
-{
+void compositor::set_active_client(const std::shared_ptr<compositor_client> &client) {
+    if (client) {
+        system_ui_inst->set_content({system_ui::content_type::APPLICATION, client->window_title});
+    } else {
+        system_ui_inst->set_content({system_ui::content_type::BIFROST, "Bifrost"});
+    }
+    active_client = client;
+}
+
+void compositor::stop() {
     running = false;
-    for (const auto& client : clients) {
+    for (const auto &client: clients) {
         client->stop();
     }
     listener_thread.join();
 }
 
-void compositor::listener()
-{
+void compositor::listener() {
     while (running) {
-        spdlog::debug("Waiting for connection");
         auto connection = socket->accept_connection();
-        spdlog::debug("Accepted connection");
-        auto client = std::make_shared<compositor_client>(std::move(connection), compositor_client::compositor_client_config {
-                                                                                     .title_bar_height = 100,
-                                                                                 });
-        clients.push_back(client);
+        auto client = std::make_shared<compositor_client>(std::move(connection),
+                                                          compositor_client::compositor_client_config{
+                                                              .id = next_client_id++,
+                                                              .navbar_height = 100,
+                                                              .swapchain_extent = {SCREEN_WIDTH, SCREEN_HEIGHT},
+                                                              .pos = {0, 0}
+                                                          });
+
+        {
+            std::lock_guard lock(client_mutex);
+            clients.push_back(client);
+            set_active_client(client);
+        }
+
         client->start();
     }
 }
 
-void compositor::refresh(point p1, point p2, refresh_type type)
-{
+void compositor::refresh(const point p1, const point p2, const refresh_type type) const {
+    spdlog::debug("Refreshing area: {}x{}-{}x{} with type {}", p1.x, p1.y, p2.x, p2.y, static_cast<int>(type));
     switch (type) {
-    case MONOCHROME:
-        cfg.screen_update_func(cfg.epfb_inst, p1, p2, 0, 0, 0);
-        break;
-    case COLOR_ANIMATION:
-        cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 0, 0);
-        break;
-    case COLOR_CONTENT:
-        cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 4, 0);
-        break;
-    case COLOR_FAST:
-        cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 1, 0);
-        break;
-    case COLOR_1:
-        cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 3, 0);
-        break;
-    case COLOR_2:
-        cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 5, 0);
-        break;
-    case FULL:
-        cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 4, 1);
-        break;
+        case MONOCHROME:
+            cfg.screen_update_func(cfg.epfb_inst, p1, p2, 0, 0, 0);
+            break;
+        case COLOR_ANIMATION:
+            cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 0, 0);
+            break;
+        case COLOR_CONTENT:
+            cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 4, 0);
+            break;
+        case COLOR_FAST:
+            cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 1, 0);
+            break;
+        case COLOR_1:
+            cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 3, 0);
+            break;
+        case COLOR_2:
+            cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 5, 0);
+            break;
+        case FULL:
+            cfg.screen_update_func(cfg.epfb_inst, p1, p2, 1, 4, 1);
+            break;
+        default: break;
     }
 }
+
+uint32_t compositor::next_client_id = 0;

@@ -13,23 +13,21 @@
 
 class lvgl_renderer : public std::enable_shared_from_this<lvgl_renderer> {
 public:
-    explicit lvgl_renderer(QImage* fb, std::mutex& fb_mutex, std::function<void(rect, refresh_type)> refresh_func)
-        : fb(fb), fb_mutex(fb_mutex), refresh_func(refresh_func)
+    explicit lvgl_renderer(QImage* fb, std::function<void(rect, refresh_type)> refresh_func)
+        : fb(fb),refresh_func(refresh_func)
     {
     }
     void initialize();
     void request_full_refresh();
     void set_global_refresh_hint(refresh_type hint) { global_refresh_hint = hint; }
     void tick();
-    void enable_transparent_bg();
     ~lvgl_renderer();
 private:
     static std::weak_ptr<lvgl_renderer> instance;
     QImage* fb;
-    std::mutex& fb_mutex;
     std::function<void(rect, refresh_type)> refresh_func;
     lv_display_t* display;
-    uint8_t* compose_buffer;
+    uint8_t* composite_buffer;
     long last_full_refresh_time = 0;
     bool full_refresh_requested = false;
 

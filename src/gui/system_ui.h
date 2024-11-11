@@ -29,7 +29,7 @@ private:
     std::stack<lv_obj_t *> deletion_queue; 
     int title_bar_height;
 
-    lv_obj_t* title_bar;
+    lv_obj_t* navbar;
     lv_obj_t* title_label;
     lv_obj_t* left_action;
     lv_obj_t* left_action_wrapper;
@@ -37,7 +37,7 @@ private:
     lv_obj_t* right_action_wrapper;
 
     content_info current_content = {content_type::BIFROST, "Bifrost"};
-    bool application_exit_requested;
+    bool application_exit_requested = false;
 
 
     static void gesture_cb(lv_event_t * e);

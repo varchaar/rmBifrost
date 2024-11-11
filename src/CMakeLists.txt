@@ -38,6 +38,8 @@ add_library(rmBifrost_compositor SHARED entrypoint.cpp
         resources.h
         gui/system_ui.cpp
         gui/system_ui.h
+        gui/components/message_box.cpp
+        gui/components/message_box.h
 )
 
 add_library(rmBifrost::compositor ALIAS rmBifrost_compositor)

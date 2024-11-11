@@ -1,7 +1,7 @@
 #ifndef GLOBAL_CONSTANTS_H
 #define GLOBAL_CONSTANTS_H
 
-enum refresh_type {
+enum refresh_type : int {
     MONOCHROME = 0,
     COLOR_ANIMATION = 1,
     COLOR_FAST = 2,
